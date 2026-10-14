@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Plant Care Tracker BD</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: #f2f7f2; color: #1e2a1e; }
+  header { background: #2e6b34; color: #fff; padding: 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  header h1 { margin: 0; font-size: 1.4rem; }
+  header p { margin: 4px 0 0; opacity: .85; font-size: .9rem; }
+  main { max-width: 900px; margin: 0 auto; padding: 16px; }
+  nav { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+  nav button, .btn { border: 1px solid #2e6b34; background: #fff; color: #2e6b34; border-radius: 8px; padding: 8px 14px; cursor: pointer; font-size: .95rem; }
+  nav button.active, .btn.primary { background: #2e6b34; color: #fff; }
+  .btn.danger { border-color: #b3261e; color: #b3261e; }
+  .btn.small { padding: 5px 10px; font-size: .85rem; }
+  .btn:disabled { opacity: .5; cursor: default; }
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+  .stat { background: #fff; border-radius: 12px; padding: 14px; text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+  .stat b { display: block; font-size: 1.6rem; color: #2e6b34; }
+  .stat span { font-size: .85rem; color: #555; }
+  .card { background: #fff; border-radius: 12px; padding: 14px; margin-bottom: 12px; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+  .card-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .card-head h3 { margin: 0; }
+  .meta { color: #666; margin: 4px 0; font-size: .9rem; }
+  .notes { color: #444; font-size: .9rem; background: #f6f9f6; padding: 8px; border-radius: 8px; }
+  .caregrid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 10px 0; font-size: .9rem; }
+  .card-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .row { display: flex; justify-content: space-between; align-items: center; gap: 8px; background: #fff; border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: .8rem; font-weight: 600; white-space: nowrap; }
+  .badge-overdue { background: #fde8e8; color: #9b1c1c; }
+  .badge-today { background: #fef3c7; color: #92400e; }
+  .badge-upcoming { background: #e0f2e0; color: #2e6b34; }
+  .empty { color: #666; background: #fff; padding: 16px; border-radius: 10px; }
+  .toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+  .toolbar input[type="search"] { flex: 1; min-width: 140px; padding: 8px 10px; border: 1px solid #ccc; border-radius: 8px; font-size: .95rem; }
+  form .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  form label { display: block; font-size: .85rem; color: #444; margin-bottom: 2px; }
+  form input, form textarea { width: 100%; padding: 8px 10px; border: 1px solid #ccc; border-radius: 8px; font-size: .95rem; font-family: inherit; }
+  .error { color: #9b1c1c; background: #fde8e8; padding: 10px; border-radius: 8px; margin-bottom: 10px; }
+  #toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: #1e2a1e; color: #fff; padding: 10px 18px; border-radius: 999px; font-size: .9rem; box-shadow: 0 4px 16px rgba(0,0,0,.25); }
+  footer { text-align: center; color: #666; font-size: .8rem; padding: 20px 12px 40px; }
+  @media (max-width: 600px) {
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .caregrid, form .grid { grid-template-columns: 1fr; }
+    header h1 { font-size: 1.15rem; }
+    .row { flex-direction: column; align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div><h1 id="h-title">Plant Care Tracker</h1><p id="tagline"></p></div>
+  <button class="btn" id="langBtn" style="background:#fff">Bangla</button>
+</header>
+<main>
+  <nav>
+    <button id="tabDashboard" class="active"></button>
+    <button id="tabPlants"></button>
+    <button id="tabReminders"></button>
+    <button id="tabLog"></button>
+  </nav>
+
+  <section id="viewDashboard">
+    <div class="stats">
+      <div class="stat"><b id="statTotal">0</b><span id="lblStatTotal"></span></div>
+      <div class="stat"><b id="statWater">0</b><span id="lblStatWater"></span></div>
+      <div class="stat"><b id="statOverdue">0</b><span id="lblStatOverdue"></span></div>
+      <div class="stat"><b id="statWeek">0</b><span id="lblStatWeek"></span></div>
+    </div>
+    <h2 id="dashDueTitle"></h2>
+    <div id="dashDueList"></div>
+  </section>
+
+  <section id="viewPlants" hidden>
+    <h2 id="plantsTitle"></h2>
+    <div class="toolbar">
+      <input type="search" id="searchInput" placeholder="">
+      <button class="btn primary" id="btnAddPlant"></button>
+    </div>
+    <div class="card" id="plantForm" hidden>
+      <h3 id="formTitle"></h3>
+      <p class="error" id="formErrors" hidden></p>
+      <div class="grid">
+        <div><label id="lblName" for="f-name"></label><input id="f-name" maxlength="60"></div>
+        <div><label id="lblSpecies" for="f-species"></label><input id="f-species" maxlength="80"></div>
+        <div><label id="lblLocation" for="f-location"></label><input id="f-location" maxlength="80" placeholder="balcony / roof / indoor"></div>
+        <div><label id="lblAcquired" for="f-acquired"></label><input id="f-acquired" type="date"></div>
+        <div><label id="lblWaterEvery" for="f-water-every"></label><input id="f-water-every" type="number" min="1" max="365" step="1"></div>
+        <div><label id="lblFertEvery" for="f-fert-every"></label><input id="f-fert-every" type="number" min="1" max="365" step="1"></div>
+        <div><label id="lblLastWatered" for="f-last-watered"></label><input id="f-last-watered" type="date"></div>
+        <div><label id="lblLastFertilized" for="f-last-fertilized"></label><input id="f-last-fertilized" type="date"></div>
+      </div>
+      <div style="margin-top:10px"><label id="lblNotes" for="f-notes"></label><textarea id="f-notes" rows="2" maxlength="500"></textarea></div>
+      <div style="margin-top:12px;display:flex;gap:8px"><button class="btn primary" id="btnSavePlant"></button><button class="btn" id="btnCancelPlant"></button></div>
+    </div>
+    <div id="plantList"></div>
+  </section>
+
+  <section id="viewReminders" hidden>
+    <h2 id="remTitle"></h2>
+    <div id="reminderList"></div>
+  </section>
+
+  <section id="viewLog" hidden>
+    <h2 id="logTitle"></h2>
+    <div id="logList"></div>
+  </section>
+
+  <div class="toolbar" style="margin-top:20px">
+    <button class="btn" id="btnExport"></button>
+    <button class="btn" id="btnImport"></button>
+    <input type="file" id="importFile" accept=".json,application/json" hidden>
+    <button class="btn danger" id="btnClearAll"></button>
+  </div>
+  <div class="card" id="clearBox" hidden>
+    <p><span id="lblClearConfirm"></span></p>
+    <input id="clearInput" placeholder="DELETE" style="padding:8px 10px;border:1px solid #ccc;border-radius:8px">
+    <div style="margin-top:8px;display:flex;gap:8px"><button class="btn danger" id="btnConfirmClear"></button><button class="btn" id="btnCancelClear"></button></div>
+  </div>
+
+  <p id="toast" hidden></p>
+</main>
+<footer><span id="footerDisclaimer"></span></footer>
+<script src="js/logic.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
